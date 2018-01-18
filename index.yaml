@@ -1,0 +1,6 @@
+indexes:  
+- kind: UserData
+  ancestor: yes
+  properties:
+  - name: StartDate
+    direction: desc
