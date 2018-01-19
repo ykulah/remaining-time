@@ -89,7 +89,7 @@ func addTripHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		_, err = datastore.Put(c, k, &u)
 		if err == nil {
-			fmt.Fprintf(w, "%s ", "OK")
+			fmt.Fprintf(w, "%s ", "Trip added.")
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 
@@ -188,7 +188,8 @@ func getTripsHandler(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
 	q := datastore.NewQuery("UserData").Ancestor(my_datastore_Key(c)).Filter("Username =", mux.Vars(r)["username"])
 	t := q.Run(c)
-	ret := ""
+
+	var ret []map[string]time.Time
 	for {
 		var u User
 		_, err := t.Next(&u)
@@ -200,17 +201,17 @@ func getTripsHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		ret += u.Username
-		ret += "\n"
+		toAdd := make(map[string]time.Time)
+
 		for _, tmp := range u.InvalidDates {
-			ret += "start: "
-			ret += tmp.StartDate.String()
-			ret += " end: "
-			ret += tmp.EndDate.String()
-			ret += "\n"
+			toAdd["start"] = tmp.StartDate
+			toAdd["end"] = tmp.EndDate
+			ret = append(ret, toAdd)
 		}
 	}
-	fmt.Fprintf(w, "%s", ret)
+	if out, err := json.Marshal(ret); err == nil {
+		w.Write(out)
+	}
 }
 
 func init() {
