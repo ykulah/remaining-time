@@ -26,6 +26,11 @@ type User struct {
 	InvalidDates []Trip
 }
 
+const (
+	timeFormat = "02-01-2006"
+	daysNeeded = 1095
+)
+
 // guestbookKey returns the key used for all guestbook entries.
 func my_datastore_Key(c context.Context) *datastore.Key {
 	// The string "default_guestbook" here could be varied to have multiple guestbooks.
@@ -36,8 +41,7 @@ func addUserHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	c := appengine.NewContext(r)
 
-	template := "02-01-2006"
-	timeStr, _ := time.Parse(template, vars["startDate"])
+	timeStr, _ := time.Parse(timeFormat, vars["startDate"])
 
 	g := User{
 		Username:     vars["username"],
@@ -60,28 +64,29 @@ func addTripHandler(w http.ResponseWriter, r *http.Request) {
 	q := datastore.NewQuery("UserData").Filter("Username =", vars["username"])
 	t := q.Run(c)
 	for {
-		logrus.Warn("-----")
 		var u User
 		k, err := t.Next(&u)
 		if err == datastore.Done {
-			logrus.Warn("DONE")
 			break
 		}
 		if err != nil {
 			logrus.Errorf("fetching next Person: %v", err)
 			break
 		}
-		template := "02-01-2006"
-		start, _ := time.Parse(template, vars["startDate"])
-		end, _ := time.Parse(template, vars["endDate"])
+		start, _ := time.Parse(timeFormat, vars["startDate"])
+		end, _ := time.Parse(timeFormat, vars["endDate"])
 
 		tr := Trip{
 			StartDate: start,
 			EndDate:   end,
 		}
-		u.InvalidDates = append(u.InvalidDates, tr)
-		logrus.Warn(u)
-		//u.InvalidDates = append(u.InvalidDates, tr)
+
+		dummy, _ := time.Parse(timeFormat, "0001-01-01")
+		if u.InvalidDates[0].StartDate == dummy {
+			u.InvalidDates[0] = tr
+		} else {
+			u.InvalidDates = append(u.InvalidDates, tr)
+		}
 		_, err = datastore.Put(c, k, &u)
 		if err == nil {
 			fmt.Fprintf(w, "%s ", "OK")
@@ -93,25 +98,79 @@ func addTripHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func removeTripHandler(w http.ResponseWriter, r *http.Request)      {}
-func getRemaningDaysHandler(w http.ResponseWriter, r *http.Request) {}
+func removeTripHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	c := appengine.NewContext(r)
+
+	q := datastore.NewQuery("UserData").Filter("Username =", vars["username"])
+	t := q.Run(c)
+
+	for {
+		var u User
+		k, err := t.Next(&u)
+		if err == datastore.Done {
+			break
+		}
+		if err != nil {
+			logrus.Errorf("fetching next Person: %v", err)
+			break
+		}
+		start, _ := time.Parse(timeFormat, vars["startDate"])
+		end, _ := time.Parse(timeFormat, vars["endDate"])
+
+		for idx, tr := range u.InvalidDates {
+			if tr.StartDate == start && tr.EndDate == end {
+				u.InvalidDates = append(u.InvalidDates[:idx], u.InvalidDates[idx+1:]...)
+				break
+			}
+		}
+		_, err = datastore.Put(c, k, &u)
+		if err == nil {
+			fmt.Fprintf(w, "%s ", "Trip deleted.")
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		}
+
+	}
+}
+func getRemaningDaysHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	c := appengine.NewContext(r)
+
+	q := datastore.NewQuery("UserData").Filter("Username =", vars["username"])
+	t := q.Run(c)
+	var invalidDays int
+	var requiredDays int
+	var duration int
+	for {
+		var u User
+		_, err := t.Next(&u)
+		if err == datastore.Done {
+			break
+		}
+		if err != nil {
+			logrus.Errorf("fetching next Person: %v", err)
+			break
+		}
+
+		for _, tr := range u.InvalidDates {
+			tmp := tr.EndDate.Sub(tr.StartDate)
+			invalidDays += int(tmp.Hours() / 24)
+		}
+
+		duration = int(time.Since(u.StartDate).Hours() / 24)
+		requiredDays = daysNeeded - duration + invalidDays
+	}
+
+	fmt.Fprintf(w, "%d", requiredDays)
+}
 func defaultHandler(w http.ResponseWriter, r *http.Request) {
 	m := make(map[string]string)
 	m["version"] = "1.0"
 	if out, err := json.Marshal(m); err == nil {
 		w.Write(out)
 	}
-}
-
-func startDateHandler(w http.ResponseWriter, r *http.Request) {
-	c := appengine.NewContext(r)
-	q := datastore.NewQuery("UserData").Filter("Username =", mux.Vars(r)["username"])
-
-	var user []User
-	if _, err := q.GetAll(c, &user); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	fmt.Fprintf(w, "%v", user[0].StartDate)
 }
 
 func countHandler(w http.ResponseWriter, r *http.Request) {
@@ -143,8 +202,7 @@ func getTripsHandler(w http.ResponseWriter, r *http.Request) {
 
 		ret += u.Username
 		ret += "\n"
-		for i, tmp := range u.InvalidDates {
-			logrus.Warn(i)
+		for _, tmp := range u.InvalidDates {
 			ret += "start: "
 			ret += tmp.StartDate.String()
 			ret += " end: "
@@ -159,14 +217,13 @@ func init() {
 
 	router := mux.NewRouter().StrictSlash(true)
 
-	router.HandleFunc("/api", defaultHandler)                                          // set router
-	router.HandleFunc("/api/addUser/{username}/{startDate}", addUserHandler)           // set router
-	router.HandleFunc("/api/addTrip/{username}/{startDate}/{endDate}", addTripHandler) // set router
-	router.HandleFunc("/api/removeTrip", removeTripHandler)                            // set router
-	router.HandleFunc("/api/getRemaningDays", getRemaningDaysHandler)                  // set router
-	router.HandleFunc("/api/count/{username}", countHandler)                           // set router
-	router.HandleFunc("/api/getStartDate/{username}", startDateHandler)                // set router
-	router.HandleFunc("/api/getTrips/{username}", getTripsHandler)                     // set router
+	router.HandleFunc("/api", defaultHandler)                                                // DONE
+	router.HandleFunc("/api/addUser/{username}/{startDate}", addUserHandler)                 // DONE
+	router.HandleFunc("/api/addTrip/{username}/{startDate}/{endDate}", addTripHandler)       // DONE
+	router.HandleFunc("/api/removeTrip/{username}/{startDate}/{endDate}", removeTripHandler) // DONE
+	router.HandleFunc("/api/getRemainingDays/{username}", getRemaningDaysHandler)            // DONE
+	router.HandleFunc("/api/count/{username}", countHandler)                                 // DONE
+	router.HandleFunc("/api/getTrips/{username}", getTripsHandler)                           // DONE
 	http.Handle("/", router)
 
 	logrus.Info("Init completed.")
