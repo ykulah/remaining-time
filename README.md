@@ -1,6 +1,8 @@
 # remaining-time
 Simple app with GCP Appengine and Datastore.
-Deployed on ```https://remaining-time-c9dd7.appspot.com```
+UI: ```https://frontend-dot-remaining-time-c9dd7.appspot.com```
+
+Deployed on ```https://backend-dot-remaining-time-c9dd7.appspot.com```
 
 ### Add User
 ```
