@@ -38,6 +38,7 @@ func my_datastore_Key(c context.Context) *datastore.Key {
 }
 
 func addUserHandler(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	vars := mux.Vars(r)
 	c := appengine.NewContext(r)
 
@@ -58,6 +59,7 @@ func addUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func addTripHandler(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	vars := mux.Vars(r)
 	c := appengine.NewContext(r)
 
@@ -99,6 +101,7 @@ func addTripHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func removeTripHandler(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	vars := mux.Vars(r)
 	c := appengine.NewContext(r)
 
@@ -135,6 +138,7 @@ func removeTripHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func getRemaningDaysHandler(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	vars := mux.Vars(r)
 	c := appengine.NewContext(r)
 
@@ -163,7 +167,12 @@ func getRemaningDaysHandler(w http.ResponseWriter, r *http.Request) {
 		requiredDays = daysNeeded - duration + invalidDays
 	}
 
-	fmt.Fprintf(w, "%d", requiredDays)
+	m := make(map[string]int)
+	m["requiredDays"] = requiredDays
+	if out, err := json.Marshal(m); err == nil {
+		w.Write(out)
+	}
+
 }
 func defaultHandler(w http.ResponseWriter, r *http.Request) {
 	m := make(map[string]string)
@@ -185,8 +194,10 @@ func countHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getTripsHandler(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
 	c := appengine.NewContext(r)
-	q := datastore.NewQuery("UserData").Ancestor(my_datastore_Key(c)).Filter("Username =", mux.Vars(r)["username"])
+	q := datastore.NewQuery("UserData").Filter("Username =", mux.Vars(r)["username"])
 	t := q.Run(c)
 
 	var ret []map[string]time.Time
@@ -201,17 +212,21 @@ func getTripsHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		toAdd := make(map[string]time.Time)
-
 		for _, tmp := range u.InvalidDates {
+			toAdd := make(map[string]time.Time)
 			toAdd["start"] = tmp.StartDate
 			toAdd["end"] = tmp.EndDate
 			ret = append(ret, toAdd)
+			logrus.Warn(ret)
 		}
 	}
 	if out, err := json.Marshal(ret); err == nil {
 		w.Write(out)
 	}
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 func init() {

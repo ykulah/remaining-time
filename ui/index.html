@@ -1,0 +1,60 @@
+<!doctype html>
+<html ng-app="remainingTimeApp">
+  <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.7/angular.min.js"></script>
+    <script src="controller.js"></script>
+    <link rel="stylesheet" href="index.css">
+  </head>
+  <body>
+
+    <div ng-controller="remainingTimeController">
+      
+      
+      <form name=info ng-submit="getInfo()">
+        <input type="text" ng-model="username"  size="30" placeholder="Username" required/>
+        <input ng-disabled="info.$invalid" type="submit" value="View info">
+
+      </form>
+
+      <div ng-show="showNewTripForm">
+      <form name="newTrip" ng-submit="addTrip()">
+          <h2>Add Trip</h2>
+
+          <label>Trip start date</label>
+          <input type="date"name="tripStartInput" ng-model="startDate" placeholder="yyyy-MM-dd" required />
+          <div role="alert">
+            <span class="error" ng-show="tripStartInput.input.$error.required">Required!</span>
+            <span class="error" ng-show="tripStartInput.input.$error.date">Not a valid date!</span>
+          </div>
+
+          <label>Trip end date</label>
+          <input type="date"name="tripEndInput" ng-model="endDate" placeholder="yyyy-MM-dd" required />
+          <div role="alert">
+            <span class="error" ng-show="tripEndInput.input.$error.required">Required!</span>
+            <span class="error" ng-show="tripEndInput.input.$error.date">Not a valid date!</span>
+           </div>
+
+           <input ng-disabled="info.$invalid" type="submit" value="Add trip">
+           <label ng-show="showStatus">{{status}}</label>
+      </form>
+      </div>
+
+      <div ng-show="showNewTripForm">
+        <h2>Remaining Days</h2>
+        {{ remainingDays }}
+      
+        <h2>Trips</h2>
+        <table>
+            <tr>
+              <td>Start Date</td> 
+              <td>End Date</td> 
+            </tr>
+            <tr ng-repeat="x in trips">
+              <td>{{ x.start }}</td>
+              <td>{{ x.end }}</td>
+            </tr>
+          </table>
+      </div>
+    </div>
+  </body>
+</html>
