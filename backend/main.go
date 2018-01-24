@@ -45,9 +45,8 @@ func addUserHandler(w http.ResponseWriter, r *http.Request) {
 	timeStr, _ := time.Parse(timeFormat, vars["startDate"])
 
 	g := User{
-		Username:     vars["username"],
-		StartDate:    timeStr,
-		InvalidDates: make([]Trip, 1),
+		Username:  vars["username"],
+		StartDate: timeStr,
 	}
 
 	key := datastore.NewIncompleteKey(c, "UserData", my_datastore_Key(c))
@@ -168,6 +167,9 @@ func getRemaningDaysHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	m := make(map[string]int)
+	m["daysNeeded"] = daysNeeded
+	m["duration"] = duration
+	m["invalidDays"] = invalidDays
 	m["requiredDays"] = requiredDays
 	if out, err := json.Marshal(m); err == nil {
 		w.Write(out)

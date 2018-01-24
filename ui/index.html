@@ -1,60 +1,136 @@
 <!doctype html>
-<html ng-app="remainingTimeApp">
+<html >
   <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.7/angular.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.css">
+    <!-- Angular Material requires Angular.js Libraries -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-animate.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-aria.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-messages.min.js"></script>
+    <!-- Angular Material Library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.js"></script>
+
     <script src="controller.js"></script>
     <link rel="stylesheet" href="index.css">
   </head>
-  <body>
-
+  <body ng-cloak ng-app="remainingTimeApp">
+    
     <div ng-controller="remainingTimeController">
-      
-      
-      <form name=info ng-submit="getInfo()">
-        <input type="text" ng-model="username"  size="30" placeholder="Username" required/>
-        <input ng-disabled="info.$invalid" type="submit" value="View info">
+        <md-content class="md-padding" >
+            <div layout="column" layout-gt-xs="row" >
+               <md-card flex flex-gt-xs="40" ng-show="showRegister">
+                   
+                   <md-card-content>
+                      <h2>Not Registered ?</h2>
+                      <form name=info ng-submit="addUser()">
+                          <md-input-container>
+                            <label>Username</label>
+                            <input type="text" ng-model="username" required/>
+                            <br>
+                          </md-input-container>
 
-      </form>
+                          <md-input-container>
+                            <label>Job start date</label>
+                            <md-datepicker ng-model="jobStartDate" required/>
+                            <br>
+                          </md-input-container>
+                          
+                          <br>
+                          <md-button class="md-raised md-primary" ng-click="addUser()">Register</md-button>
+                          <label ng-show="showRegisterResult">{{ registerStatus }}</label>
+                        </form>
 
-      <div ng-show="showNewTripForm">
-      <form name="newTrip" ng-submit="addTrip()">
-          <h2>Add Trip</h2>
-
-          <label>Trip start date</label>
-          <input type="date"name="tripStartInput" ng-model="startDate" placeholder="yyyy-MM-dd" required />
-          <div role="alert">
-            <span class="error" ng-show="tripStartInput.input.$error.required">Required!</span>
-            <span class="error" ng-show="tripStartInput.input.$error.date">Not a valid date!</span>
-          </div>
-
-          <label>Trip end date</label>
-          <input type="date"name="tripEndInput" ng-model="endDate" placeholder="yyyy-MM-dd" required />
-          <div role="alert">
-            <span class="error" ng-show="tripEndInput.input.$error.required">Required!</span>
-            <span class="error" ng-show="tripEndInput.input.$error.date">Not a valid date!</span>
+                   </md-card-content>
+               </md-card>
+               <md-card flex >    
+                   <md-card-content>
+                    <h2>Already registered !</h2>
+                      <form name=info>
+                        <md-input-container>
+                          <label>Username</label>
+                          <input type="text" ng-model="username" required/>
+                          <br>
+                        </md-input-container>
+                        <md-button class="md-raised md-primary" ng-click="getInfo()">View info</md-button>
+                      
+                      </form>
+                      <div ng-show="showNewTripForm">
+                        <h2>Remaining Days</h2>
+                        {{ remainingDays }}
+                        <br>
+                        <h4> Exact date: {{ exactDate }}</h4>
+                      </div>
+                   </md-card-content>
+               </md-card>
            </div>
+        </md-content>
 
-           <input ng-disabled="info.$invalid" type="submit" value="Add trip">
-           <label ng-show="showStatus">{{status}}</label>
-      </form>
-      </div>
+        <md-content class="md-padding" ng-show="showNewTripForm">
+          <div layout="column" layout-gt-xs="row" >
+            <md-card flex flex-gt-xs="30">
+            <md-card-content>
+              <div>
+              <form name="newTrip" ng-submit="addTrip()">
+                  <h2>Add Trip</h2>
+        
+                  <label>Trip start date</label>
+                  <input type="date" name="tripStartInput" ng-model="startDate" placeholder="yyyy-MM-dd" required />
+                  <div role="alert">
+                    <span class="error" ng-show="tripStartInput.input.$error.required">Required!</span>
+                    <span class="error" ng-show="tripStartInput.input.$error.date">Not a valid date!</span>
+                  </div>
+        
+                  <label>Trip end date</label>
+                  <input type="date"name="tripEndInput" ng-model="endDate" placeholder="yyyy-MM-dd" required />
+                  <div role="alert">
+                    <span class="error" ng-show="tripEndInput.input.$error.required">Required!</span>
+                    <span class="error" ng-show="tripEndInput.input.$error.date">Not a valid date!</span>
+                    </div>
+        
+                    <input ng-disabled="info.$invalid" type="submit" value="Add trip">
+                    <label ng-show="showStatus">{{status}}</label>
+              </form>
+              </div>
+            </md-card-content>
+            </md-card>
+            <md-card flex >
+            <md-card-content>
+                <div ng-show="showNewTripForm">
+                    <h2>Trips</h2>
+                    <md-content>
+                        <md-list>
+                          <md-list-item class="md-3-line" ng-repeat="x in trips" >
+                            <div class="md-list-item-text">
+                              <h3>Departure:  {{x.start}}</h3>
+                              <h3>Arrival:    {{x.end}}</h3>
+                              <p></p>
+                            </div>
+                            <md-button class="md-secondary" ng-click="deleteTrip($index)">Delete</md-button>
+                            <md-divider ng-if="!$last"></md-divider>
+                          </md-list-item>
+                        </md-list>
+                      </md-content>
 
-      <div ng-show="showNewTripForm">
-        <h2>Remaining Days</h2>
-        {{ remainingDays }}
-      
-        <h2>Trips</h2>
-        <table>
-            <tr>
-              <td>Start Date</td> 
-              <td>End Date</td> 
-            </tr>
-            <tr ng-repeat="x in trips">
-              <td>{{ x.start }}</td>
-              <td>{{ x.end }}</td>
-            </tr>
-          </table>
-      </div>
+
+<!--
+
+                    <table>
+                        <tr>
+                          <td>Start Date</td> 
+                          <td>End Date</td> 
+                        </tr>
+                        <tr ng-repeat="x in trips">
+                          <td>{{ x.start }}</td>
+                          <td>{{ x.end }}</td>
+                        </tr>
+                      </table>
+-->
+                  </div>
+            </md-card-content>
+            </md-card>
+          </div>
+        </md-content>
     </div>
   </body>
 </html>
