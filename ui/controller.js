@@ -2,17 +2,19 @@ angular.module('remainingTimeApp', ['ngMaterial'])
   .controller('remainingTimeController', function($scope, $http, $mdDialog) {
     var backendURL = "https://backend-dot-remaining-time-c9dd7.appspot.com"
     $scope.showRegister = true
+    $scope.showViewInfo = true
 
     $scope.getInfo = function(){
       $scope.showProgressBar=true
-
+      $scope.showViewInfo = false
       $http.get(backendURL + "/api/count/"+$scope.username)
       .then(function(response){
         var cnt = parseInt(response.data)
-        if (cnt < 0){
+        if (cnt <= 0){
           $scope.existStatus = "User not found. Register first."
           $scope.userExistsError = true
           $scope.showProgressBar=false
+          $scope.showViewInfo = true
         } else {
           $scope.showRegister = false
           $scope.showNewTripForm = true

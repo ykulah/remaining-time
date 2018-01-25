@@ -57,7 +57,7 @@
                           <input type="text" ng-model="username" required/>
                           <br>
                         </md-input-container>
-                        <md-button class="md-raised md-primary" type="submit" ng-disabled="!infoForm.$valid">View info</md-button>
+                        <md-button class="md-raised md-primary" type="submit" ng-disabled="!infoForm.$valid" ng-show="showViewInfo">View info</md-button>
                         <br>
                         <label ng-show="userExistsError">{{ existStatus }}</label>
                       
