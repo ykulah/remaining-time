@@ -1,7 +1,6 @@
 angular.module('remainingTimeApp', ['ngMaterial'])
   .controller('remainingTimeController', function($scope, $http, $mdDialog) {
     var backendURL = "https://backend-dot-remaining-time-c9dd7.appspot.com"
-    backendURL = "http://localhost:8081"
     $scope.showRegister = true
 
     $scope.getInfo = function(){
