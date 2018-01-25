@@ -18,6 +18,7 @@ angular.module('remainingTimeApp', ['ngMaterial'])
         } else {
           $scope.showRegister = false
           $scope.showNewTripForm = true
+          $scope.userExistsError = false
           updateTripList()
           calculateRemainingTime()
         }
