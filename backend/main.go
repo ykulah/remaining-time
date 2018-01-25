@@ -81,21 +81,25 @@ func addTripHandler(w http.ResponseWriter, r *http.Request) {
 			StartDate: start,
 			EndDate:   end,
 		}
+		/*
+			dummy, _ := time.Parse(timeFormat, "0001-01-01")
+			if u.InvalidDates[0].StartDate == dummy {
+				u.InvalidDates[0] = tr
+			} else {
 
-		dummy, _ := time.Parse(timeFormat, "0001-01-01")
-		if u.InvalidDates[0].StartDate == dummy {
-			u.InvalidDates[0] = tr
-		} else {
-			u.InvalidDates = append(u.InvalidDates, tr)
-		}
+			}
+		*/
+		u.InvalidDates = append(u.InvalidDates, tr)
 		_, err = datastore.Put(c, k, &u)
 		if err == nil {
-			fmt.Fprintf(w, "%s ", "Trip added.")
+			m := make(map[string]string)
+			m["status"] = "ok"
+			if out, err := json.Marshal(m); err == nil {
+				w.Write(out)
+			}
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-
 		}
-
 	}
 }
 
@@ -128,7 +132,11 @@ func removeTripHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		_, err = datastore.Put(c, k, &u)
 		if err == nil {
-			fmt.Fprintf(w, "%s ", "Trip deleted.")
+			m := make(map[string]string)
+			m["status"] = "ok"
+			if out, err := json.Marshal(m); err == nil {
+				w.Write(out)
+			}
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 
@@ -185,7 +193,7 @@ func defaultHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func countHandler(w http.ResponseWriter, r *http.Request) {
-
+	enableCors(&w)
 	c := appengine.NewContext(r)
 	q, err := datastore.NewQuery("UserData").Ancestor(my_datastore_Key(c)).Filter("Username =", mux.Vars(r)["username"]).Count(c)
 	if err != nil {
